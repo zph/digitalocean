@@ -1,0 +1,23 @@
+# For a simple Ruby library or Gem, Gemfile.lock should not be under
+# version control. 
+#
+# See http://stackoverflow.com/questions/4151495/should-gemfile-lock-be-included-in-gitignore
+Gemfile.lock
+*.gem
+*.rbc
+*.sw[a-p]
+*.tmproj
+*.tmproject
+*.un~
+*~
+.DS_Store
+.Spotlight-V100
+.Trashes
+._*
+.bundle
+.config
+.directory
+.elc
+.redcar
+.yardoc
+tmp/*
