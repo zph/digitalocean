@@ -35,7 +35,11 @@ module DigitalOcean
     end
 
     def set_id(input)
-      input || input.id
+      if input.respond_to?(:id)
+        input.id
+      else
+        input
+      end
     end
 
     def droplets_action_url(droplet, action)
@@ -96,7 +100,6 @@ module DigitalOcean
   module Droplets
     extend self
     extend DigitalOcean::Core
-    alias :restart :reboot
     def show_all
       url = "#{droplets_url}?#{auth_url}"
       gather_response(url, "droplets").map { |d| Droplet.new(d) }
@@ -115,6 +118,8 @@ module DigitalOcean
     def reboot(droplet)
       action(droplet, "reboot")
     end
+
+    alias :restart :reboot
 
     def power_cycle(droplet)
       action(droplet, "power_cycle")
@@ -144,6 +149,7 @@ module DigitalOcean
   end
 
   class Droplet
+    include DigitalOcean::Core
     attr_accessor :response_status, :id, :name, :image_id, :size_id, \
       :region_id, :backups_active, :ip_address, :status
     def initialize(droplet)
@@ -156,6 +162,30 @@ module DigitalOcean
       @ip_address = droplet["ip_address"]
       @status = droplet["status"]
     end
+
+    def show
+      url = "#{droplets_url}#{@id}?#{auth_url}"
+      Droplet.new(gather_response(url, "droplet"))
+    end
+
+    alias :refresh_info :show
+
+    def power_cycle
+      action(self, "power_cycle")
+    end
+
+    def shutdown
+      action(self, "shutdown")
+    end
+
+    def power_off
+      action(self, "power_off")
+    end
+
+    def power_on
+      action(self, "power_on")
+    end
+
   end
 
   Image = Struct.new(:id, :name, :distribution)
@@ -164,5 +194,6 @@ module DigitalOcean
 
 end
 
+d = DigitalOcean::Droplets.show_all.first
 require'pry';binding.pry
 
