@@ -1,11 +1,16 @@
 require 'pry'
 require 'open-uri'
 require 'json'
+require 'faraday'
 
-CLIENT_ID, API_KEY = File.open(File.expand_path("~/.digitalocean.auth.rc")).read.split("\n")
 
 module DigitalOcean
   BadRequest = Class.new(StandardError)
+
+  module Auth
+    extend self
+    CLIENT_ID, API_KEY = File.open(File.expand_path("~/.digitalocean.auth.rc")).read.split("\n")
+  end
 
   module Core
     extend self
@@ -75,7 +80,7 @@ module DigitalOcean
     end
 
     def show(image)
-      id = image || image.id
+      id = set_id(image)
       url = "#{image_url}#{id}?#{auth_url}"
       gather_response(url, "image")
     end
@@ -194,6 +199,5 @@ module DigitalOcean
 
 end
 
-d = DigitalOcean::Droplets.show_all.first
-require'pry';binding.pry
+# d = DigitalOcean::Droplets.show_all.first
 

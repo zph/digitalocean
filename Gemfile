@@ -1,5 +1,7 @@
 source :rubygems
 
+gem 'faraday'
+
 group :development do
   gem 'pry'
   gem 'guard'
@@ -8,6 +10,7 @@ group :development do
   gem 'guard-bundler'
   gem 'guard-rspec'
   gem 'guard-cucumber'
+  gem 'webmock'
 end
 
 group :development, :test do
