@@ -15,6 +15,13 @@ module DigitalOcean
   module Core
     extend self
 
+    def basic_connection
+      Faraday.new(:url => "https://api.digitalocean.com/" ) do |f|
+        f.request :url_encoded
+        f.adapter Faraday.default_adapter
+      end
+    end
+
     def digital_ocean_url
       "https://api.digitalocean.com/"
     end
@@ -36,7 +43,7 @@ module DigitalOcean
     end
 
     def auth_url
-      "client_id=#{ CLIENT_ID }&api_key=#{ API_KEY }"
+      "client_id=#{ DigitalOcean::Auth::CLIENT_ID }&api_key=#{ DigitalOcean::Auth::API_KEY }"
     end
 
     def set_id(input)
@@ -66,8 +73,29 @@ module DigitalOcean
       end
     end
 
+    def gather_response_faraday(body, *key)
+      response = JSON.parse(body)
+      raise BadRequest unless response["status"] == "OK"
+      if key[0]
+        response.fetch(key[0])
+      else
+        response
+      end
+    end
   end
 
+  module APIRoot
+    extend self
+    extend DigitalOcean::Core
+
+    def display_docs
+      conn = basic_connection
+      conn.get do |r|
+      r.url '',  :client_id => DigitalOcean::Auth::CLIENT_ID,
+                :api_key => DigitalOcean::Auth::API_KEY
+      end
+    end
+  end
   module Images
     extend self
     extend DigitalOcean::Core
@@ -81,8 +109,13 @@ module DigitalOcean
 
     def show(image)
       id = set_id(image)
-      url = "#{image_url}#{id}?#{auth_url}"
-      gather_response(url, "image")
+      conn = basic_connection
+      response = conn.get do |r|
+        r.url "/image/#{id}"
+        r.params['client_id'] = DigitalOcean::Auth::CLIENT_ID
+        r.params['api_key'] = DigitalOcean::Auth::API_KEY
+      end
+      gather_response_faraday(reponse.body, "image")
     end
 
     def destroy!(image)
@@ -106,14 +139,39 @@ module DigitalOcean
     extend self
     extend DigitalOcean::Core
     def show_all
-      url = "#{droplets_url}?#{auth_url}"
-      gather_response(url, "droplets").map { |d| Droplet.new(d) }
+      response = basic_connection.get do |r|
+        r.url "/droplets/"
+        r.params['client_id'] = DigitalOcean::Auth::CLIENT_ID
+        r.params['api_key'] = DigitalOcean::Auth::API_KEY
+      end
+      gather_response_faraday(response.body, "droplets").map { |d| Droplet.new(d) }
+    end
+
+    def droplets_request(args)
+      id = set_id(args[:droplet])
+      action = args.fetch(:action) { "" }
+      key = args.fetch(:key) { nil }
+      extra_params = args.fetch(:params) { Hash.new }
+      response = basic_connection.get do |r|
+        r.url "/droplets/#{id}/#{action}/"
+        r.params['client_id'] = DigitalOcean::Auth::CLIENT_ID
+        r.params['api_key'] = DigitalOcean::Auth::API_KEY
+        r.params.merge!(extra_params)
+      end
+      gather_response_faraday(response.body, key )
     end
 
     def show(droplet)
+      # Droplet.new droplets_request(:droplet => droplet)
+      #
       id = set_id(droplet)
-      url = "#{droplets_url}#{id}?#{auth_url}"
-      Droplet.new(gather_response(url, "droplet"))
+      key = "droplet"
+      response = basic_connection.get do |r|
+        r.url "/droplets/#{id}"
+        r.params['client_id'] = DigitalOcean::Auth::CLIENT_ID
+        r.params['api_key'] = DigitalOcean::Auth::API_KEY
+      end
+      Droplet.new gather_response_faraday(response.body, key )
     end
 
     def create(args)
@@ -121,36 +179,86 @@ module DigitalOcean
     end
 
     def reboot(droplet)
-      action(droplet, "reboot")
+      droplets_request(:droplet => droplet, :action => "reboot")
     end
 
     alias :restart :reboot
 
     def power_cycle(droplet)
-      action(droplet, "power_cycle")
+      droplets_request(:droplet => droplet, :action => "power_cycle")
     end
 
     def shutdown(droplet)
-      action(droplet, "shutdown")
+      droplets_request(:droplet => droplet, :action => "shutdown")
     end
 
     def power_off(droplet)
-      action(droplet, "power_off")
+      droplets_request(:droplet => droplet, :action => "power_off")
     end
 
     def power_on(droplet)
-      action(droplet, "power_on")
+      droplets_request(:droplet => droplet, :action => "power_on")
     end
 
-    def root_password_reset!(droplet)
-      action(droplet, "password_reset")
+    def password_reset(droplet)
+      droplets_request(:droplet => droplet, :action => "password_reset")
     end
 
-    def resize!(droplet, new_size_id)
-      id = set_id(droplet)
-      url = "#{droplets_url}#{id}/resize/?size_id=#{new_size_id}&#{auth_url}"
-      gather_response(url)
+    def enable_backups(droplet)
+      droplets_request(:droplet => droplet, :action => "enable_backups")
     end
+
+    def disable_backups(droplet)
+      droplets_request(:droplet => droplet, :action => "disable_backups")
+    end
+
+    def destroy(droplet)
+      droplets_request(:droplet => droplet, :action => "destroy")
+    end
+
+    def destroy(droplet)
+      droplets_request(:droplet => droplet, :action => "destroy")
+    end
+
+    def snapshot(droplet, snapshot_name)
+      droplets_request(:droplet => droplet,
+                       :action => "snapshot",
+                       :params => {"name" => snapshot_name},)
+    end
+    def resize(droplet, size_id)
+      droplets_request(:droplet => droplet,
+                       :action => "resize",
+                       :params => {"size_id" => size_id},)
+    end
+
+    def restore(droplet, size_id)
+      droplets_request(:droplet => droplet,
+                       :action => "restore",
+                       :params => {"image_id" => size_id},)
+
+    end
+    def rebuild(droplet, size_id)
+      droplets_request(:droplet => droplet,
+                       :action => "rebuild",
+                       :params => {"image_id" => size_id},)
+
+    end
+  end
+
+  module Regions
+    extend self
+    extend DigitalOcean::Core
+
+    def show_all
+      response = basic_connection.get do |r|
+        r.url "/regions/"
+        r.params['client_id'] = DigitalOcean::Auth::CLIENT_ID
+        r.params['api_key'] = DigitalOcean::Auth::API_KEY
+      end
+      gather_response_faraday(response.body, "regions").map { |d| Region.new(d["id"], d["name"])}
+    end
+
+#    end
   end
 
   class Droplet
@@ -190,14 +298,12 @@ module DigitalOcean
     def power_on
       action(self, "power_on")
     end
-
   end
 
   Image = Struct.new(:id, :name, :distribution)
 
   Size = Struct.new(:id, :name)
 
+  Region = Struct.new(:id, :name)
+
 end
-
-# d = DigitalOcean::Droplets.show_all.first
-

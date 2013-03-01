@@ -11,6 +11,8 @@ group :development do
   gem 'guard-rspec'
   gem 'guard-cucumber'
   gem 'webmock'
+  # gem 'vcr'
+  # gem 'fakeweb'
 end
 
 group :development, :test do
