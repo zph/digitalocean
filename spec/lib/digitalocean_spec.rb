@@ -54,6 +54,44 @@ describe DigitalOcean do
         DigitalOcean::Droplets.show(id).class.should eq(DigitalOcean::Droplet)
 
     end
+
+    describe "#new" do
+      let(:name) { "test_name" }
+      let(:size_id) { "32" }
+      let(:image_id) { "419" }
+      let(:region_id) { "test_region_id" }
+      let(:ssh_keys_id) { "" }
+
+      xit "creates a new droplet when all variables are present" do
+        response = %Q|{"status":"OK","droplet":{"id":100824,"name":"test_name","image_id":419,"size_id":32,"event_id":7499}}|
+        stub_request(:get, %r{https://api.digitalocean.com/droplets/new.*}).
+          to_return(:body => "#{response}", :status => 200)
+
+          DigitalOcean::Droplets.create(
+            :name => name,
+            :size_id => size_id,
+            :image_id => image_id,
+            :region_id => region_id
+          )
+
+      end
+      it "creates a new droplet when required variables are present"
+      it "fails with error when required variables are not present" do
+        response = %Q|{"status":"OK","droplet":{"id":100824,"name":"test_name","image_id":419,"size_id":32,"event_id":7499}}|
+        stub_request(:get, %r{https://api.digitalocean.com/droplets/new.*}).
+          to_return(:body => "#{response}", :status => 200)
+
+          lambda {
+            DigitalOcean::Droplets.create(
+              :size_id => size_id,
+              :image_id => image_id,
+              :region_id => region_id
+            )
+          }.should raise_exception(ArgumentError)
+      end
+
+    end
+
     # it "reboots when asked" do
     #   VCR.use_cassette('droplets_reboot') do
     #     r = DigitalOcean::Droplets.reboot(112728)['status'].should eq("OK")
