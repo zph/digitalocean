@@ -1,6 +1,6 @@
 # DigitalOcean API in Ruby
 
-If you found this by Googling, you might be in the wrong place. Go to [digital_ocean](https://github.com/rmoriz/digital_ocean) instead or install their Gem from RubyGems.  Their code is more established and tested.  
+If you found this by Googling, you might be in the wrong place. Go to [digital_ocean](https://github.com/rmoriz/digital_ocean) instead or install their Gem from RubyGems.  Their code is more established and more thoroughly tested.  
 
 ##You've been warned.
 
