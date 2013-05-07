@@ -1,12 +1,12 @@
 # DigitalOcean API in Ruby
 
-If you found this by Googling, you might be in the wrong place. Go to [digital_ocean](https://github.com/rmoriz/digital_ocean) instead or install their Gem from RubyGems.  Their code is more established and more thoroughly tested.  
+If you found this by Googling, you might be in the wrong place. Try out [digital_ocean](https://github.com/rmoriz/digital_ocean) instead or install their Gem from RubyGems.  Their code is more established and more thoroughly tested.  
 
-###You've been warned! I can't be held responsible if your computer or Droplets explode in a shower of magma.
+###Danger Danger! I can't be held responsible if your computer or Droplets explode in a shower of magma when using this code.
 
 ## Getting started
 
-This is an _ALPHA_ library for wrapping the DigitalOcean VPS API in `Ruby` for my own use.  This is not thoroughly tested or ready for production. This is a project for fun and might/will be dropped when I no longer need the functionality.
+This is an _ALPHA_ library for wrapping the DigitalOcean VPS API in `Ruby` for my own use.  This is not thoroughly tested or ready for production, though I'm happily using it for my own VPS provisioning. This is a project for fun and might/will be dropped when I no longer need the functionality.
 
 But if you find something useful in here, cool!
 
@@ -14,6 +14,28 @@ But if you find something useful in here, cool!
 
 Install via `Bundler`
 Run `ruby ./lib/digitalocean.rb` (which will drop you into a Pry Session)
+
+## How this Differs from Other Wrappers
+Both a literal translation of the commands are available (ie it mirrors the actual HTTP API request):
+
+`DigitalOcean::Droplets.show_all`
+
+Or you can act on individual servers as objects.  I.E. the values returned from traditional API calls are used to instantiate `Droplet` objects.  This enables easier manipulation of server collections:
+
+```
+droplet = DigitalOcean::Droplets.show_all.first
+droplet.restart
+droplet.shutdown
+```
+
+```
+collection_of_droplets = DigitalOcean::Droplets.show_all # Normal call returns collection of Droplet objects
+collection_of_droplets.each(&:shutdown)
+```
+
+
+## Coverage
+Code has nearly 100% Coverage of the DigitalOcean API.
 
 ## Sample Commands
 ```ruby
@@ -50,13 +72,7 @@ Run `ruby ./lib/digitalocean.rb` (which will drop you into a Pry Session)
 => #<struct DigitalOcean::Size id=66, name="512MB">
 ```
 
-Code has nearly 100% Coverage of the DigitalOcean API.  Both a literal translation of the commands are available:
 
-`DigitalOcean::Droplets.show_all`
-
-This Ruby Wrapper also allows acting on individual servers as objects.  I.E. the values returned from traditional API calls are used to instantiate `Droplet` objects.  This enables easier manipulation of server collections:
-
-`DigitalOcean::Droplets.show_all.each(&:shutdown)`
 
 Explore library in your favorite REPL (hint: Use Pry Gem)
 
