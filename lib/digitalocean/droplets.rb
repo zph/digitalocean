@@ -60,7 +60,8 @@ module DigitalOcean
     end
 
     def reboot(droplet)
-      droplets_response(:droplet => droplet, :action => "reboot").body
+      response = droplets_response(:droplet => droplet, :action => "reboot").body
+      Response.new(response['status'], response['event_id'])
     end
 
     alias :restart :reboot

@@ -38,6 +38,7 @@ module DigitalOcean
 
   SSHKey = Struct.new(:id, :name, :ssh_pub_key)
 
+  Response = Struct.new(:status, :event_id)
 end
 
 if $0 == __FILE__

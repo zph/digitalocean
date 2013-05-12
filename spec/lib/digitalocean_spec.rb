@@ -1,18 +1,31 @@
 require_relative "../spec_helper"
 
 describe DigitalOcean do
+  $VERBOSE = nil
+
+  before do
+    DigitalOcean::Auth::CLIENT_ID = "client_id_value"
+    DigitalOcean::Auth::API_KEY = "api_key_value"
+  end
+
   describe "::Auth" do
     it "loads client_id from auth file" do
-      DigitalOcean::Auth::CLIENT_ID.should_not be(nil)
+      DigitalOcean::Auth::CLIENT_ID.should eq("client_id_value")
     end
     it "loads api_key from auth file" do
-      DigitalOcean::Auth::API_KEY.should_not be(nil)
+      DigitalOcean::Auth::API_KEY.should eq("api_key_value")
     end
   end
 
   describe "::Core" do
-    it "auth_url should return correct string" do
-      DigitalOcean::Core.auth_url.should_not be(nil)
+    context "#auth_url" do
+      it "should include value for client_id" do
+        DigitalOcean::Core.auth_url.should match("client_id=client_id_value")
+      end
+
+      it "should include value for api_key" do
+        DigitalOcean::Core.auth_url.should match("api_key=api_key_value")
+      end
     end
 
   end
@@ -32,12 +45,15 @@ describe DigitalOcean do
     #   end
     # end
 
-    it "shows all droplets" do
-      response = %Q|{"status":"OK","droplets":[{"backups_active":null,"id":100823,"image_id":420,"name":"test222","region_id":1,"size_id":33,"status":"active"}]}|
-      stub_request(:get, %r{.*api.digitalocean.com/droplets/\?.*}).
-        to_return(:body => "#{response}", :status => 200)
+    context "first droplet in collection" do
+      it "instantiates Droplet class object" do
+        response = %Q|{"status":"OK","droplets":[{"backups_active":null,"id":100823,"image_id":420,"name":"test222","region_id":1,"size_id":33,"status":"active"}]}|
+        stub_request(:get, %r{.*api.digitalocean.com/droplets/\?.*}).
+          to_return(:body => "#{response}", :status => 200)
 
-        DigitalOcean::Droplets.show_all[0].class.should eq(DigitalOcean::Droplet)
+          DigitalOcean::Droplets.show_all[0].class.should eq(DigitalOcean::Droplet)
+      end
+
     end
     # it "shows detailed info on a droplet" do
     #   VCR.use_cassette('show_droplet') do
@@ -45,13 +61,16 @@ describe DigitalOcean do
     #   end
     # end
 
-    it "shows detailed droplet info" do
-      id = 100823
-      response = %Q|{"status":"OK","droplet":{"backups_active":null,"id":100823,"image_id":420,"name":"test222","region_id":1,"size_id":33,"status":"active"}}|
-      stub_request(:get, %r{.*api.digitalocean.com/droplets/100823\?.*}).
-        to_return(:body => "#{response}", :status => 200)
+    context "#show" do
+      it "instantiates a droplet based on its ID" do
+        id = 100823
+        response = %Q|{"status":"OK","droplet":{"backups_active":null,"id":100823,"image_id":420,"name":"test222","region_id":1,"size_id":33,"status":"active"}}|
+        stub_request(:get, %r{.*api.digitalocean.com/droplets/100823\?.*}).
+          to_return(:body => "#{response}", :status => 200)
 
-        DigitalOcean::Droplets.show(id).class.should eq(DigitalOcean::Droplet)
+          DigitalOcean::Droplets.show(id).class.should eq(DigitalOcean::Droplet)
+
+      end
 
     end
 
@@ -75,7 +94,9 @@ describe DigitalOcean do
           )
 
       end
-      it "creates a new droplet when required variables are present"
+      xit "creates a new droplet when required variables are present"
+
+      # TODO specifically test various iterations of non present variables
       it "fails with error when required variables are not present" do
         response = %Q|{"status":"OK","droplet":{"id":100824,"name":"test_name","image_id":419,"size_id":32,"event_id":7499}}|
         stub_request(:get, %r{https://api.digitalocean.com/droplets/new.*}).
@@ -92,18 +113,12 @@ describe DigitalOcean do
 
     end
 
-    # it "reboots when asked" do
-    #   VCR.use_cassette('droplets_reboot') do
-    #     r = DigitalOcean::Droplets.reboot(112728)['status'].should eq("OK")
-    #   end
-    # end
-
     it "reboots when asked" do
       response = %Q|{"status":"OK","event_id":7501}|
       stub_request(:get, %r{.*api.digitalocean.com/droplets/100823/reboot/\?.*}).
         to_return(:body => "#{response}", :status => 200)
 
-    r = DigitalOcean::Droplets.reboot(100823)['status'].should eq("OK")
+      r = DigitalOcean::Droplets.reboot(100823).status.should eq("OK")
     end
 
     it "powercycles a droplet" do
